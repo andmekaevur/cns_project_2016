@@ -39,3 +39,6 @@ R/Data
 
 # from MAC
 *.DS_Store
+
+# Python
+icns/*
