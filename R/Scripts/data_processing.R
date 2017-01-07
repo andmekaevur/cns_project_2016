@@ -1,17 +1,23 @@
 ## PREPARE DATA FOR CONDUCTING AN EXPERIMENT AND STORE IT ##  
 
 rm(list = ls())
+if (!require("R.matlab")) {
+  install.packages("R.matlab", repos="http://cran.rstudio.com/") 
+}
 library("R.matlab")
 library(randomForest)
+
+# NB! might need to change PATH
+setwd("~/git/cns_project_2016/R/Scripts")
 
 # Reading given data
 # X_raw:
 # - rows are EEG signals for different channels 
 # - columns are measurements for different experiments with 20 ms interval
-X_raw = readMat("./../R2198_20ms.mat")[["mm"]]
+X_raw = readMat("./../../R2198_20ms.mat")[["mm"]]
 # Y_raw: 
 # - columns are coordinates of rat"s position (x, y) 
-Y_raw = read.table("./../R2198_locations.dat")
+Y_raw = read.table("./../../R2198_locations.dat")
 
 # prepare data sets for condacting an experiment
 # Experiment: based on timewindow [t - n; t + n] predict coordinates (x, y) for experiment #t 
@@ -42,12 +48,15 @@ prepare_datasets = function (n, fft) {
   return(list(X = X, Y = Y))
 }
 
+# create directory for saving data (if there is no such)
+data_dir = "../Data/"
+dir.create(data_dir, showWarnings = FALSE)
+
 # Save prepared datasets 
 timewindow = c(10, 20, 50, 75)
-folder_path = "Data/"
 for (n in timewindow) {
   res_raw = prepare_datasets(n, FALSE)
   res_fft = prepare_datasets(n, TRUE)
-  saveRDS(res_raw, paste(folder_path, "raw_", n, ".rds", sep = ""))
-  saveRDS(res_fft, paste(folder_path, "fft_", n, ".rds", sep = ""))
+  saveRDS(res_raw, paste(data_dir, "raw_", n, ".rds", sep = ""))
+  saveRDS(res_fft, paste(data_dir, "fft_", n, ".rds", sep = ""))
 }
