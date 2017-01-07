@@ -14,8 +14,9 @@ X_raw = readMat("./../R2198_20ms.mat")[["mm"]]
 Y_raw = read.table("./../R2198_locations.dat")
 
 # prepare data sets for condacting an experiment
-# feature vector for experiment t is glued togeather timeslices [t - n; t + n] of different channels
-# IN: n (int) - size of timewindow; fft (bool) - whether to apply fft or not before concatenation of channel"s timeslices
+# Experiment: based on timewindow [t - n; t + n] predict coordinates (x, y) for experiment #t 
+# feature vector for experiment #t is glued togeather timeslices [t - n; t + n] of different channels
+# IN: n (int) - size of timewindow; fft (bool) - whether to apply fft or not before concatenation of channel's timeslices
 # OUT: list where
 # X - matrix of feature vectors (row is one feature vector); Y - correspondent coordinates
 prepare_datasets = function (n, fft) {
