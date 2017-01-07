@@ -2,8 +2,8 @@
 
 rm(list = ls())
 library(randomForest)
-library(foreach)
-library(doSNOW)
+# library(foreach)
+# library(doSNOW)
 
 # NB! might need to change PATH
 setwd("~/git/cns_project_2016/R/Scripts")
@@ -14,7 +14,7 @@ data_folder = "../Data/"
 models_folder = "../Models/"
 result_dir = "Results/"
 dir.create(result_dir, showWarnings = FALSE)
-result_file = paste(result_dir, "rf.csv", sep = "")
+result_file = paste0("rf_res_", format(Sys.time(), "%m%d_%H%M"), ".csv")
 
 # seed value
 seed = 123
@@ -24,7 +24,7 @@ set.seed(seed)
 timewindow = c(10, 20, 50, 75)
 
 # subsample fraction (to minimize running time)
-subsample_fraction = 0.1
+subsample_fraction = 0.5
 
 # set fraction of data points to be used for experiment
 training_fraction = 0.8
@@ -36,7 +36,7 @@ nodes = 6
 trees_num = 10
 
 # make separate folders for different experiments parameters
-models_folder = paste(models_folder, trees_num, "_", subsample_fraction, "_", training_fraction, "/", sep = "")
+models_folder = paste0(models_folder, trees_num, "_", subsample_fraction, "_", training_fraction, "/")
 dir.create(models_folder, showWarnings = FALSE)
 
 # turn off warning messages (to make it on change to 0)
@@ -67,13 +67,13 @@ rf_run = function (n, fft, seed=123) {
   
   # identify file name with processed data and read it
   if (fft) {
-    filename = paste("fft_", n, sep="")
+    filename = paste0("fft_", n)
     preprocessing = "fft"
   } else {
-    filename = paste("raw_", n, sep="")
+    filename = paste0("raw_", n)
     preprocessing = "raw"
   }
-  data = readRDS(file=paste(data_folder, filename, ".rds", sep=""))
+  data = readRDS(file=paste0(data_folder, filename, ".rds"))
   
   # subsample data to reduce calculations
   total_num_of_experiments = nrow(data$X)
@@ -109,7 +109,7 @@ rf_run = function (n, fft, seed=123) {
   # rf.x = foreach(trees = rep(trees_num/nodes, nodes), .combine = combine, .packages = "randomForest") %dopar%
   #   randomForest(x=train.features, y = train.x, ntree = trees, importance = TRUE)
 
-  model_x_file = paste(models_folder, "x_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds", sep="")
+  model_x_file = paste0(models_folder, "x_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds")
   saveRDS(rf.x, file=model_x_file)
   
   print("Y coordinate training ...")
@@ -117,7 +117,7 @@ rf_run = function (n, fft, seed=123) {
   # rf.y = foreach(trees = rep(trees_num/nodes, nodes), .combine = combine, .packages = "randomForest") %dopar%
   #   randomForest(x=train.features, y = train.y, ntree = trees, importance = TRUE)
   
-  model_y_file = paste(models_folder, "y_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds", sep="")
+  model_y_file = paste0(models_folder, "y_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds")
   saveRDS(rf.y, file=model_y_file)
   
   print("prediction for X ...")

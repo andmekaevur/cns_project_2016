@@ -37,6 +37,8 @@ vignettes/*.pdf
 # Saved data
 R/Data
 
+R/Scripts/Results
+
 # from MAC
 *.DS_Store
 
