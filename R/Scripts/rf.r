@@ -5,11 +5,16 @@ library(randomForest)
 library(foreach)
 library(doSNOW)
 
+# NB! might need to change PATH
+setwd("~/git/cns_project_2016/R/Scripts")
+
 ## CONSTANT SECTION ##
 # Paths to processed data and model folders + to result file
 data_folder = "../Data/"
 models_folder = "../Models/"
-result_file = "Results/rf.csv"
+result_dir = "Results/"
+dir.create(result_dir, showWarnings = FALSE)
+result_file = paste(result_dir, "rf.csv", sep = "")
 
 # seed value
 seed = 123
