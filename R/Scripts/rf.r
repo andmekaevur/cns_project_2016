@@ -1,6 +1,10 @@
 ## READ PROCESSED DATA AND APPLY RANDOM FOREST ##  
 
 rm(list = ls())
+# install libraries if is needed
+if (!require("randomForest")) {
+  install.packages("randomForest", repos="http://cran.rstudio.com/") 
+}
 library(randomForest)
 # library(foreach)
 # library(doSNOW)
@@ -8,7 +12,6 @@ library(randomForest)
 # NB! might need to change PATH
 setwd("~/git/cns_project_2016/R/Scripts")
 
-## CONSTANT SECTION ##
 # Paths to processed data and model folders + to result file
 data_folder = "../Data/"
 models_folder = "../Models/"
@@ -31,6 +34,9 @@ training_fraction = 0.8
 
 # set num of nodes for parallelisation 
 nodes = 6
+
+# necessary for concurrent running
+# registerDoSNOW(makeCluster(nodes, type="SOCK"))
 
 # set trees num for random forest
 trees_num = 10
@@ -97,9 +103,6 @@ rf_run = function (n, fft, seed=123) {
   train.y = data$Y[train_ind, 2]
   test.y = as.data.frame(data$Y[-train_ind, 2])
   
-  # necessary for concurrent running
-  # registerDoSNOW(makeCluster(nodes, type="SOCK"))
-  
   # run rf (based on target type it will be RF for regression)
   print(paste("training started for", filename))
   
@@ -109,7 +112,7 @@ rf_run = function (n, fft, seed=123) {
   # rf.x = foreach(trees = rep(trees_num/nodes, nodes), .combine = combine, .packages = "randomForest") %dopar%
   #   randomForest(x=train.features, y = train.x, ntree = trees, importance = TRUE)
 
-  model_x_file = paste0(models_folder, "x_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds")
+  model_x_file = paste0(models_folder, "rf_x_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds")
   saveRDS(rf.x, file=model_x_file)
   
   print("Y coordinate training ...")
@@ -117,7 +120,7 @@ rf_run = function (n, fft, seed=123) {
   # rf.y = foreach(trees = rep(trees_num/nodes, nodes), .combine = combine, .packages = "randomForest") %dopar%
   #   randomForest(x=train.features, y = train.y, ntree = trees, importance = TRUE)
   
-  model_y_file = paste0(models_folder, "y_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds")
+  model_y_file = paste0(models_folder, "rf_y_", filename, "_", trees_num, "_", seed, "_", subsample_fraction, ".rds")
   saveRDS(rf.y, file=model_y_file)
   
   print("prediction for X ...")

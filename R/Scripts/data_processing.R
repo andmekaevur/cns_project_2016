@@ -1,8 +1,12 @@
 ## PREPARE DATA FOR CONDUCTING AN EXPERIMENT AND STORE IT ##  
 
 rm(list = ls())
+# install libraries if is needed
 if (!require("R.matlab")) {
   install.packages("R.matlab", repos="http://cran.rstudio.com/") 
+}
+if (!require("randomForest")) {
+  install.packages("randomForest", repos="http://cran.rstudio.com/") 
 }
 library("R.matlab")
 library(randomForest)
