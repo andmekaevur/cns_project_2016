@@ -1,5 +1,5 @@
 rm(list=ls())
-# install libraries if is needed
+# install libraries if it is needed
 if (!require("xgboost")) {
   install.packages("xgboost", repos="http://cran.rstudio.com/") 
 }

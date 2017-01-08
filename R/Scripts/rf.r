@@ -1,7 +1,7 @@
 ## READ PROCESSED DATA AND APPLY RANDOM FOREST ##  
 
 rm(list = ls())
-# install libraries if is needed
+# install libraries if it is needed
 if (!require("randomForest")) {
   install.packages("randomForest", repos="http://cran.rstudio.com/") 
 }

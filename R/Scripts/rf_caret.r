@@ -1,7 +1,7 @@
 ## RF with caret package with cross-validation ## 
 
 rm(list = ls())
-# install libraries if is needed
+# install libraries if it is needed
 if (!require("caret")) {
   install.packages("caret", repos="http://cran.rstudio.com/") 
 }
