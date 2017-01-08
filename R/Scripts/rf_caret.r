@@ -20,6 +20,7 @@ models_folder = "../Models/"
 result_dir = "Results/"
 dir.create(result_dir, showWarnings = FALSE)
 result_file = paste0(result_dir, "rf_caret_res_", format(Sys.time(), "%m%d_%H%M"), ".csv")
+print(paste("result will be in", result_file))
 
 # seed value
 seed = 123
@@ -29,13 +30,13 @@ set.seed(seed)
 timewindow = c(10, 20, 50, 75)
 
 # subsample fraction (to minimize running time)
-subsample_fraction = 0.01
+subsample_fraction = 0.5
 
 # set fraction of data points to be used for experiment
 training_fraction = 0.8
 
 # register needed number of cores
-registerDoMC(cores = 8)
+registerDoMC(cores = 6)
 
 # set trees num for random forest
 trees_num = 10

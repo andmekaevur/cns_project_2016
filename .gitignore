@@ -36,8 +36,12 @@ vignettes/*.pdf
 
 # Saved data
 R/Data
+*.rds
 
 R/Scripts/Results
+
+# from xgboost
+xgboost.model
 
 # from MAC
 *.DS_Store
