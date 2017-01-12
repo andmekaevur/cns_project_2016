@@ -61,8 +61,9 @@ dir.create(data_dir, showWarnings = FALSE)
 # Save prepared datasets 
 timewindow = c(10, 20, 50, 75)
 for (n in timewindow) {
-  res_raw = prepare_datasets(n, FALSE)
-  res_fft = prepare_datasets(n, TRUE)
-  saveRDS(res_raw, paste(data_dir, "raw_", n, ".rds", sep = ""))
-  saveRDS(res_fft, paste(data_dir, "fft_", n, ".rds", sep = ""))
+  shift = 1
+  res_raw = prepare_datasets(n, FALSE, shift)
+  res_fft = prepare_datasets(n, TRUE, shift)
+  saveRDS(res_raw, paste0(data_dir, "raw_", n, "_", shift, "_", format(Sys.time(), "%m%d_%H%M"), ".rds"))
+  saveRDS(res_fft, paste0(data_dir, "fft_", n, "_", shift, "_", format(Sys.time(), "%m%d_%H%M"), ".rds"))
 }
