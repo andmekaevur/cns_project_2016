@@ -26,22 +26,30 @@ seed = 123
 set.seed(seed)
 
 # nodes number for concurrent running
-nodes = 8
+threads_num = 10
+
+# if results become worse then stop
+early_stop = 50
 
 # set windows' width
 timewindow = c(10, 20, 50, 75)
 
 # subsample fraction (to minimize running time)
-subsample_fraction = 0.5
+subsample_fraction = 0.1
 
 # set fraction of data points to be used for experiment
 training_fraction = 0.8
 
 # hyper parameters searh for tuning
-folds = c(4)
-eta = c(0.3, 0.1)
-lambda = c(0, 1)
-rounds_num = 200
+folds = c(5)
+eta = c(0.1, 0.3, 0.5)
+gamma = c(0, 1, 5)
+max_depth = c(6, 10)
+min_child_weight = c(1, 5)
+max_delta_step = c(0, 3)
+subsample = c(0.7, 1)
+colsample_bytree = c(0.7, 1)
+rounds_num = 120
 
 # make separate folders for different experiments parameters
 models_dir = paste0(models_dir, "xgb_tune_", subsample_fraction, "_", 
@@ -87,52 +95,71 @@ xgb_tune = function (n, seed=123) {
   dtrain.y <- xgb.DMatrix(data=train.features, label=train.y)
   
   # combine all parameters into data frame
-  N = expand.grid(folds, eta, lambda)
+  N = expand.grid(folds, eta, gamma, max_depth, min_child_weight, max_delta_step,
+                  subsample, colsample_bytree)
   results = as.data.frame(N)
-  names(results)=c("folds", "eta", "lambda")
+  names(results)=c("folds", "eta", "gamma", "max_depth", "min_child_weight", 
+                   "max_delta_step", "subsample", "colsample_bytree")
   results$bestMAE = -1
   results$bestRound = -1
   
   print(paste("tuning started for ", data_filename))
+  
   print("X coordinate ...")
   # main loop for estimating different parameters for X coordinate
   for (i in 1:nrow(N)) {
+    print(n)
     print(i)
+    print(paste("Parameters: ", N[i, 1], N[i, 2], N[i, 3], N[i, 4], N[i, 5], 
+                 N[i, 6], N[i, 7], N[i, 8]))
     param <- list(objective  = "reg:linear",
-                  booster  = "gblinear",
+                  booster  = "gbtree",
                   eval_metric  = "mae",
                   eta = N[i,2],
-                  lambda = N[i,3])
+                  gamma = N[i,3],
+                  max_depth = N[i, 4],
+                  min_child_weight = N[i, 5], 
+                  max_delta_step = N[i, 6],
+                  subsample = N[i, 7],
+                  colsample_bytree = N[i, 8])
     # use early stoping to speed up the process
-    CV_current = xgb.cv(params = param, data = dtrain.x, early.stop.round=100, nrounds = rounds_num, 
-                        nfold = N[i,1], nthread = nodes, maximize = FALSE)
+    CV_current = xgb.cv(params = param, data = dtrain.x, early.stop.round=early_stop, 
+                        nrounds = rounds_num, nfold = N[i, 1], 
+                        nthread = threads_num, maximize = FALSE)
     CV_current$MAE = CV_current$evaluation_log[, "test_mae_mean"]
     results$bestRound[i] = CV_current$best_iteration
     results$bestMAE[i] = CV_current$MAE[CV_current$best_iteration][[1]]
     
-    write.table(results, file = paste0(result_file, "_x.csv"), quote = FALSE,
+    write.table(results, file = paste0(result_file, "_", n, "_x.csv"), quote = FALSE,
                 append = FALSE, col.names=TRUE, row.names=FALSE, sep=";")
   }
   
-  print("Y coordinate ...")
-  # main loop for estimating different parameters for X coordinate
-  for (i in 1:nrow(N)) {
-    print(i)
-    param <- list(objective  = "reg:linear",
-                  booster  = "gblinear",
-                  eval_metric  = "mae",
-                  eta = N[i,2],
-                  lambda = N[i,3])
-    # use early stoping to speed up the process
-    CV_current = xgb.cv(params = param, data = dtrain.y, early.stop.round=100, nrounds = rounds_num, 
-                        nfold = N[i,1], nthread = nodes, maximize = FALSE)
-    CV_current$MAE = CV_current$evaluation_log[, "test_mae_mean"]
-    results$bestRound[i] = CV_current$best_iteration
-    results$bestMAE[i] = CV_current$MAE[CV_current$best_iteration][[1]]
-    
-    write.table(results, file = paste0(result_file, "_y.csv"), quote = FALSE,
-                append = FALSE, col.names=TRUE, row.names=FALSE, sep=";")
-  }
+  # print("Y coordinate ...")
+  # # main loop for estimating different parameters for X coordinate
+  # for (i in 1:nrow(N)) {
+  #   print(paste("Parameters: ", N[i, 1], N[i, 2], N[i, 3], N[i, 4], N[i, 5], 
+  #                N[i, 6], N[i, 7], N[i, 8]))
+  #   param <- list(objective  = "reg:linear",
+  #                 booster  = "gbtree",
+  #                 eval_metric  = "mae",
+  #                 eta = N[i,2],
+  #                 gamma = N[i,3],
+  #                 max_depth = N[i, 4],
+  #                 min_child_weight = N[i, 5], 
+  #                 max_delta_step = N[i, 6],
+  #                 subsample = N[i, 7],
+  #                 colsample_bytree = N[i, 8])
+  #   # use early stoping to speed up the process
+  #   CV_current = xgb.cv(params = param, data = dtrain.y, early.stop.round = early_stop, 
+  #                       nrounds = rounds_num, nfold = N[i, 1], 
+  #                       nthread = threads_num, maximize = FALSE)
+  #   CV_current$MAE = CV_current$evaluation_log[, "test_mae_mean"]
+  #   results$bestRound[i] = CV_current$best_iteration
+  #   results$bestMAE[i] = CV_current$MAE[CV_current$best_iteration][[1]]
+  #   
+  #   write.table(results, file = paste0(result_file, "_", n, "_y.csv"), quote = FALSE,
+  #               append = FALSE, col.names=TRUE, row.names=FALSE, sep=";")
+  # }
 
   time_elapsed = (proc.time() - cur_time)["elapsed"]
   print(time_elapsed)
