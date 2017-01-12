@@ -33,8 +33,9 @@ subsample_fraction = 1
 # set fraction of data points to be used for experiment
 training_fraction = 0.8
 
-# number of rounds 
-rounds_num = 200
+# number of rounds and threads for concurrent running
+rounds_num = 120
+threads_num = 16
 
 # make separate folders for different experiments parameters
 models_folder = paste0(models_folder, "xgb_", rounds_num, "_", subsample_fraction, "_", 
@@ -53,7 +54,7 @@ MAE = function(actual.x, actual.y, prediction.x, prediction.y) {
 
 # NB! currently script is working only for real number which means for raw data
 # TODO: figure it out what to do with complex numbers
-xgb_run = function (n, seed=123) {
+xgb_run = function (n, fft, seed=123) {
   cur_time = proc.time()
   set.seed(seed) 
   # create file if it does not exist yet
@@ -63,7 +64,13 @@ xgb_run = function (n, seed=123) {
     write.table(header, file = result_file, row.names = FALSE, sep = ";")
   }
   
-  filename = paste0("raw_", n)
+  # identify file name with processed data and read it
+  if (fft) {
+    filename = paste0("fft_", n)
+  } else {
+    filename = paste0("raw_", n)
+  }
+  
   data = readRDS(file=paste0(data_folder, filename, ".rds"))
   
   # subsample data to reduce calculations
@@ -88,6 +95,11 @@ xgb_run = function (n, seed=123) {
   train.y = data$Y[train_ind, 2]
   test.y = as.data.frame(data$Y[-train_ind, 2])
   
+  if(fft) {
+    train.features = Re(train.features)
+    test.features = Re(test.features)
+  }
+  
   # for xgboost data is needed to be in special kind of matrix
   dtrain.x <- xgb.DMatrix(data=train.features, label=train.x)
   dtrain.y <- xgb.DMatrix(data=train.features, label=train.y)
@@ -95,10 +107,26 @@ xgb_run = function (n, seed=123) {
   print(paste("training started for", filename))
   
   print("X coordinate training ...")
-  xgb.x = xgboost(data = dtrain.x, label = train.x, nrounds = rounds_num)
+  param <- list(objective  = "reg:linear",
+                booster  = "gbtree",
+                eval_metric  = "mae",
+                eta = 0.1,
+                gamma = 1,
+                max_depth = 10,
+                min_child_weight = 1, 
+                max_delta_step = 0,
+                subsample = 0.7,
+                colsample_bytree = 1)
+  xgb.x = xgboost(params = param, data = dtrain.x, label = train.x,
+                     nrounds = rounds_num, nthread = threads_num)
+
+  ### for estimation
+  # xgb.cv(params = param, data = dtrain.x, early.stop.round=100, nrounds = rounds_num, 
+  #        nfold = 5, nthread = 8, maximize = FALSE)
   
   print("Y coordinate training ...")
-  xgb.y = xgboost(data = dtrain.y, label = train.y, nrounds = rounds_num)
+  xgb.y = xgboost(params = param, data = dtrain.y, label = train.y, 
+                  nrounds = rounds_num, nthread = threads_num)
   
   # saving models
   model_x_file = paste0(models_folder, "xgb_x_", filename, "_", seed, "_", 
@@ -125,5 +153,5 @@ xgb_run = function (n, seed=123) {
 
 # iterates through all windows' sizes for raw data
 for (n in timewindow) {
-  xgb_run(n)
+  xgb_run(n, FALSE)
 }
