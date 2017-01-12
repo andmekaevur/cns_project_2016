@@ -26,15 +26,17 @@ Y_raw = read.table("./../../R2198_locations.dat")
 # prepare data sets for condacting an experiment
 # Experiment: based on timewindow [t - n; t + n] predict coordinates (x, y) for experiment #t 
 # feature vector for experiment #t is glued togeather timeslices [t - n; t + n] of different channels
-# IN: n (int) - size of timewindow; fft (bool) - whether to apply fft or not before concatenation of channel's timeslices
+# IN: n (int) - size of timewindow; 
+# fft (bool) - whether to apply fft or not before concatenation of channel's timeslices
+# shift (int) - responsible for shift distance  
 # OUT: list where
 # X - matrix of feature vectors (row is one feature vector); Y - correspondent coordinates
-prepare_datasets = function (n, fft) {
+prepare_datasets = function (n, fft, shift=1) {
   experiments_number = ncol(X_raw)
   channel_number = nrow(X_raw)
   X = matrix(nrow = experiments_number - 2 * n, ncol = (2 * n + 1) * channel_number) 
   Y = matrix(nrow = experiments_number - 2 * n, ncol = 2)
-  for (i in (n + 1) : (experiments_number - n)) {
+  for (i in seq(n + 1, experiments_number - n, shift)) {
     sample = c()
     for (j in 1 : channel_number) {
       if (fft) {
@@ -59,8 +61,9 @@ dir.create(data_dir, showWarnings = FALSE)
 # Save prepared datasets 
 timewindow = c(10, 20, 50, 75)
 for (n in timewindow) {
-  res_raw = prepare_datasets(n, FALSE)
-  res_fft = prepare_datasets(n, TRUE)
-  saveRDS(res_raw, paste(data_dir, "raw_", n, ".rds", sep = ""))
-  saveRDS(res_fft, paste(data_dir, "fft_", n, ".rds", sep = ""))
+  shift = 1
+  res_raw = prepare_datasets(n, FALSE, shift)
+  res_fft = prepare_datasets(n, TRUE, shift)
+  saveRDS(res_raw, paste0(data_dir, "raw_", n, "_", shift, "_", format(Sys.time(), "%m%d_%H%M"), ".rds"))
+  saveRDS(res_fft, paste0(data_dir, "fft_", n, "_", shift, "_", format(Sys.time(), "%m%d_%H%M"), ".rds"))
 }
