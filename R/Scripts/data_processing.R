@@ -26,15 +26,17 @@ Y_raw = read.table("./../../R2198_locations.dat")
 # prepare data sets for condacting an experiment
 # Experiment: based on timewindow [t - n; t + n] predict coordinates (x, y) for experiment #t 
 # feature vector for experiment #t is glued togeather timeslices [t - n; t + n] of different channels
-# IN: n (int) - size of timewindow; fft (bool) - whether to apply fft or not before concatenation of channel's timeslices
+# IN: n (int) - size of timewindow; 
+# fft (bool) - whether to apply fft or not before concatenation of channel's timeslices
+# shift (int) - responsible for shift distance  
 # OUT: list where
 # X - matrix of feature vectors (row is one feature vector); Y - correspondent coordinates
-prepare_datasets = function (n, fft) {
+prepare_datasets = function (n, fft, shift=1) {
   experiments_number = ncol(X_raw)
   channel_number = nrow(X_raw)
   X = matrix(nrow = experiments_number - 2 * n, ncol = (2 * n + 1) * channel_number) 
   Y = matrix(nrow = experiments_number - 2 * n, ncol = 2)
-  for (i in (n + 1) : (experiments_number - n)) {
+  for (i in seq(n + 1, experiments_number - n, shift)) {
     sample = c()
     for (j in 1 : channel_number) {
       if (fft) {
