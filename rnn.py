@@ -1,7 +1,8 @@
+#!/home/hpc_robertr/virtualenv3/bin/python3
+
 import inspect
 import keras
 from scipy.io import loadmat
-from sklearn.model_selection import train_test_split
 
 from keras.models import Sequential
 from keras.engine.training import slice_X
