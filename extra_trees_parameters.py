@@ -14,6 +14,7 @@ X_raw = loadmat("R2198_20ms.mat")
 y_raw = np.loadtxt("R2198_locations.dat")
 X_raw = X_raw['mm'].T
 
+
 def generate_datasets(window, step=None, test_set_sampling='chunk', test_set_size=0.2, test_chunk_location=0.8):
     print('generating data')
     print('window {}, step {}'.format(window,step))
@@ -29,7 +30,6 @@ def generate_datasets(window, step=None, test_set_sampling='chunk', test_set_siz
 
     if test_set_sampling == 'uniform_chunks':
         print('uniform chunks')
-        # refer to report for how this is calculated.
         test_set_size = 0.1
         chunk_size = int(2*window/step)
         test_set_length = int(dataset_length*test_set_size)
@@ -59,9 +59,10 @@ def generate_datasets(window, step=None, test_set_sampling='chunk', test_set_siz
 
     return X_train, X_test, y_train, y_test
 
+
 results = []
 results_hp = []
-clf = RandomForestRegressor(n_jobs=-1, verbose=0)
+clf = ExtraTreesRegressor(n_jobs=-1, verbose=0)
 
 #use a full grid over all parameters
 param_grid = {"n_estimators": [10, 50, 100, 250],
@@ -105,5 +106,3 @@ for time_window in [10,20,50,75]:
                    'model': clf.__class__.__name__})
 print results
 print results_hp
-
-

@@ -1,15 +1,15 @@
+
 from scipy.io import loadmat
 import numpy as np
 from scipy.stats import randint as sp_randint
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
 import numpy as np
-import random
-
 X_raw = loadmat("R2198_20ms.mat")
 y_raw = np.loadtxt("R2198_locations.dat")
 X_raw = X_raw['mm'].T
@@ -29,7 +29,6 @@ def generate_datasets(window, step=None, test_set_sampling='chunk', test_set_siz
 
     if test_set_sampling == 'uniform_chunks':
         print('uniform chunks')
-        # refer to report for how this is calculated.
         test_set_size = 0.1
         chunk_size = int(2*window/step)
         test_set_length = int(dataset_length*test_set_size)
@@ -59,51 +58,40 @@ def generate_datasets(window, step=None, test_set_sampling='chunk', test_set_siz
 
     return X_train, X_test, y_train, y_test
 
+
 results = []
-results_hp = []
-clf = RandomForestRegressor(n_jobs=-1, verbose=0)
+
+clf = MLPRegressor(max_iter = 500, verbose=0, random_state=1)
 
 #use a full grid over all parameters
-param_grid = {"n_estimators": [10, 50, 100, 250],
-              "max_depth": [3, 5, 10, None],
-              "max_features": [5, 10, 15, None],
-              # "min_samples_split": np.arange(2, 11),
-              # "min_samples_leaf": np.arange(1, 11),
-              "bootstrap": [True, False]}
+param_grid = {"alpha": [0.000001, 0.001,  0.1, 10, 1000],
+              "hidden_layer_sizes": [(100,), (300,), (500,)] ,
+              "solver": ["sgd", "adam"],
+              "max_iter":[200, 1000],
+              "activation": ['tanh','logistic'],
+              "warm_start": [True, False]}
 
 
-
-for time_window in [10,20,50,75]:
+scaler = StandardScaler()
+for time_window in [10, 20, 50,75]:
     use_fft = True
     X_train, X_test, y_train, y_test = generate_datasets(time_window)
-
-    print "Default parameters"
-    clf.fit(X_train, y_train)
-    prediction = clf.predict(X_test)
-    mae = mean_absolute_error(prediction, y_test)
-    mae_1 = mean_absolute_error(prediction, y_test, multioutput='raw_values')
-    print mae, mae_1
-    results.append({'time_window': time_window,
-                   'fft': use_fft,
-                   'MAE': mae,
-                   'MAE_raw': mae_1,
-                   'model': clf.__class__.__name__})
-
-    print "Hyper parameters"
-    grid_search = GridSearchCV(clf, param_grid=param_grid)
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+    # clf.fit(X_train, y_train)
+    # mae = mean_absolute_error(clf.predict(X_test), y_test)
+    # print mae
+    grid_search =  GridSearchCV(clf, param_grid=param_grid)
     grid_search.fit(X_train, y_train)
-    prediction = grid_search.predict(X_test)
-    mae = mean_absolute_error(prediction, y_test)
-    mae_1 = mean_absolute_error(prediction, y_test, multioutput='raw_values')
-    print grid_search.best_params_
-    print mae, mae_1
-    results_hp.append({'time_window': time_window,
-                   'fft': use_fft,
-                   'best_parameters': grid_search.best_params_,
-                   'MAE': mae,
-                   'MAE_raw': mae_1,
-                   'model': clf.__class__.__name__})
+    print grid_search.best_params_, time_window
+    mae = mean_absolute_error(grid_search.predict(X_test), y_test)
+    print mae
+    results.append({'time_window': time_window,
+                    'fft': use_fft,
+                    'best_parameters': grid_search.best_params_,
+                    'MAE': mae,
+                    'model': clf.__class__.__name__})
 print results
-print results_hp
 
 
